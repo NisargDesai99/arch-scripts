@@ -1,0 +1,50 @@
+#!/bin/bash
+
+# Color codes
+GREEN="\033[0;32m"
+BLUE="\033[1;34m"
+NC="\033[0m"  # No Color
+
+pacman_installs=(
+  waybar
+)
+
+yay_aur_installs=(
+)
+
+
+is_installed() {
+    pacman -Q "$1" &>/dev/null
+}
+
+
+# install pacman packages
+for pkg in "${pacman_installs[@]}"; do
+  if is_installed "$pkg"; then
+    echo -e "${GREEN}$pkg is already installed${NC} "
+  else
+    echo -e "${BLUE}Installing $pkg via pacman...${NC}"
+    sudo pacman -S "$pkg"
+    # sudo pacman -S --noconfirm "$pkg"
+  fi
+done
+
+
+# Install AUR packages
+for pkg in "${yay_aur_installs[@]}"; do
+  if is_installed "$pkg"; then
+    echo -e "${GREEN}$pkg is already installed${NC}"
+  else
+    echo -e "${BLUE}Installing $pkg via yay...${NC}"
+    yay -S "$pkg"
+    # yay -S --noconfirm "$pkg"
+  fi
+done
+
+
+
+
+
+
+
+
