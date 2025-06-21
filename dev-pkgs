@@ -10,6 +10,10 @@ pacman_installs=(
   clang
   tmux
   words  # using to generate random words file to test threaded file downloader
+  # browsers
+  brave
+  qutebrowser
+  obsidian
 )
 
 yay_aur_installs=(

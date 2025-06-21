@@ -7,11 +7,14 @@ NC="\033[0m"  # No Color
 
 pacman_installs=(
   waybar
+  wlsunset
+  dconf-editor
 )
 
 yay_aur_installs=(
+  1password
+  hyprlock
 )
-
 
 is_installed() {
     pacman -Q "$1" &>/dev/null

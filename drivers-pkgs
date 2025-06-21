@@ -18,6 +18,9 @@ pacman_installs=(
   wireplumber
   pipewire-alsa
   pipewire-jack
+  ffmpeg
+
+  xorg-xwayland
 )
 
 yay_aur_installs=(
