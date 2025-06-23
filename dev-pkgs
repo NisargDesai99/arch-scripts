@@ -16,12 +16,16 @@ pacman_installs=(
   obsidian
   fzf
   ripgrep
+  ghostty
+  grim
+  slurp
 )
 
 yay_aur_installs=(
   visual-studio-code-bin  # VS Code official microsoft build
   sublime-text
   bazel  # install without baselisk
+  flameshot-git
 )
 
 
