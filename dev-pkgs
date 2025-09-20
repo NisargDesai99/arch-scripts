@@ -19,13 +19,14 @@ pacman_installs=(
   ghostty
   grim
   slurp
+  flameshot
+  cloc
 )
 
 yay_aur_installs=(
   visual-studio-code-bin  # VS Code official microsoft build
   sublime-text
   bazel  # install without baselisk
-  flameshot-git
 )
 
 
