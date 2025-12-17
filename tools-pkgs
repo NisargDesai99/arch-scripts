@@ -8,6 +8,8 @@ NC="\033[0m"  # No Color
 pacman_installs=(
   yazi
   ffmpeg
+  btop
+  bat
 )
 
 # maybe need to add the following:
