@@ -21,6 +21,7 @@ pacman_installs=(
   slurp
   flameshot
   cloc
+  docker
   docker-compose
 )
 
