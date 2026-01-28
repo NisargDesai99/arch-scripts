@@ -30,6 +30,7 @@ yay_aur_installs=(
   sublime-text
   bazel  # install without baselisk
   github-desktop
+  grpcurl-bin
 )
 
 
