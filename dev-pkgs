@@ -23,6 +23,7 @@ pacman_installs=(
   cloc
   docker
   docker-compose
+  deno  # needed for markdown in neovim
 )
 
 yay_aur_installs=(
