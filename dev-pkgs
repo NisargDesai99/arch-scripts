@@ -28,10 +28,10 @@ pacman_installs=(
 
 yay_aur_installs=(
   visual-studio-code-bin  # VS Code official microsoft build
-  sublime-text
   bazel  # install without baselisk
   github-desktop
   grpcurl-bin
+  sublime-text-4
 )
 
 
