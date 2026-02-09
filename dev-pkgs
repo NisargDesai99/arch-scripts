@@ -24,6 +24,7 @@ pacman_installs=(
   docker
   docker-compose
   deno  # needed for markdown in neovim
+  jupyterlab
 )
 
 yay_aur_installs=(
