@@ -18,8 +18,37 @@ if [[ -z $TMUX ]] && [[ -z $tmux_running ]]; then
     exit 0
 fi
 
+new_session=false
 if ! tmux has-session -t=$selected_name 2> /dev/null; then
-    tmux new-session -ds $selected_name -c $selected
+    start_claude=$(printf "yes\nno" | fzf --prompt="Start claude? ")
+
+    if [[ -z $start_claude ]]; then
+        exit 0
+    fi
+    if [[ -n "$TMUX" ]]; then
+        win_width=$(tmux display-message -p '#{client_width}')
+        win_height=$(tmux display-message -p '#{client_height}')
+    else
+        win_width=$(tput cols)
+        win_height=$(tput lines)
+    fi
+    tmux new-session -ds $selected_name -c $selected -x $win_width -y $win_height
+    nvim_pane=$(tmux display-message -t $selected_name -p '#{pane_id}')
+    term_pane=$(tmux split-window -v -t $nvim_pane -c $selected -P -F '#{pane_id}')
+    if [[ "$start_claude" == "yes" ]]; then
+        claude_pane=$(tmux split-window -h -t $nvim_pane -c $selected -P -F '#{pane_id}')
+        tmux send-keys -t $claude_pane 'claude --resume' C-m
+    fi
+    tmux send-keys -t $nvim_pane 'nvim ./' C-m
+    tmux select-pane -t $term_pane
+    new_session=true
+fi
+
+if [[ "$new_session" == true ]]; then
+    tmux resize-pane -t $term_pane -y 21
+    if [[ -n "$claude_pane" ]]; then
+        tmux resize-pane -t $claude_pane -x 86
+    fi
 fi
 
 if [[ -n "$TMUX" ]]; then
