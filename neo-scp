@@ -1,0 +1,103 @@
+#!/bin/bash
+
+# Defaults
+LOCAL_DIR="."
+REMOTE_HOST="Desktop"
+REMOTE_PORT=""
+REMOTE_DIR="/workspace/xai-hackathon/"
+SSH_KEY=""
+
+usage() {
+    echo "Usage: $0 [OPTIONS]"
+    echo ""
+    echo "Options:"
+    echo "  -h, --host HOST       Remote host (default: Desktop)"
+    echo "  -p, --port PORT       SSH port"
+    echo "  -d, --dir DIR         Remote directory (default: /home/lev/code/research/ai/LSH-Codebook)"
+    echo "  -i, --identity FILE   SSH identity file"
+    echo "  --runpod              Use runpod preset"
+    echo "  --help                Show this help message"
+    echo ""
+    echo "Examples:"
+    echo "  $0                                    # Sync to Desktop (default)"
+    echo "  $0 --runpod                           # Sync to runpod"
+    echo "  $0 -h user@host -d /path/to/dir       # Custom remote"
+    exit 0
+}
+
+# Parse arguments
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        -h|--host)
+            REMOTE_HOST="$2"
+            shift 2
+            ;;
+        -p|--port)
+            REMOTE_PORT="$2"
+            shift 2
+            ;;
+        -d|--dir)
+            REMOTE_DIR="$2"
+            shift 2
+            ;;
+        -i|--identity)
+            SSH_KEY="$2"
+            shift 2
+            ;;
+        --runpod)
+            REMOTE_HOST="root@213.181.105.236"
+            REMOTE_PORT="16137"
+            REMOTE_DIR="/workspace/xai-hackathon/"
+            SSH_KEY="~/.ssh/runpod_id_ed25519"
+            shift
+            ;;
+        --help)
+            usage
+            ;;
+        *)
+            echo "Unknown option: $1"
+            usage
+            ;;
+    esac
+done
+
+# Build rsync SSH command
+RSYNC_RSH="ssh"
+if [[ -n "$SSH_KEY" ]]; then
+    RSYNC_RSH="$RSYNC_RSH -i $SSH_KEY"
+fi
+if [[ -n "$REMOTE_PORT" ]]; then
+    RSYNC_RSH="$RSYNC_RSH -p $REMOTE_PORT"
+fi
+
+echo "Starting live sync from $LOCAL_DIR to $REMOTE_HOST:$REMOTE_DIR"
+echo "Press Ctrl+C to stop"
+echo ""
+
+# Create remote directory if it doesn't exist
+echo "Ensuring remote directory exists..."
+$RSYNC_RSH "$REMOTE_HOST" "mkdir -p $REMOTE_DIR"
+
+# Initial sync
+echo "Performing initial sync (respecting .gitignore)..."
+rsync -avz --delete -e "$RSYNC_RSH" --filter=':- .gitignore' --exclude='.git' "$LOCAL_DIR/" "$REMOTE_HOST:$REMOTE_DIR/"
+echo "Initial sync complete!"
+echo ""
+
+# Watch for changes
+# echo "Watching for changes..."
+# fswatch -0 \
+#   --recursive \
+#   --event=Updated --event=Created --event=Removed --event=Renamed \
+#   --exclude='(^|/)\.git(/|$)' \
+#   "$LOCAL_DIR" |
+# while IFS= read -r -d '' changed; do
+#     echo "[$(date '+%H:%M:%S')] Change detected at: $changed"
+#     rsync -avz --delete -e "$RSYNC_RSH" \
+#       --filter=':- .gitignore' \
+#       --exclude='.git' \
+#       "$LOCAL_DIR/" "$REMOTE_HOST:$REMOTE_DIR/"
+#     echo "[$(date '+%H:%M:%S')] Sync complete"
+# done
+
+
