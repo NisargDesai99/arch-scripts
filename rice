@@ -1,0 +1,123 @@
+#!/usr/bin/env bash
+
+# Rice theme switcher
+# Usage: rice [component] [theme]
+#   rice              - pick component then theme via fzf
+#   rice waybar       - pick waybar theme via fzf
+#   rice waybar v1-floating-islands  - switch directly
+
+COMPONENTS_DIR="$HOME/.config"
+
+# Map of component -> iterations directory
+declare -A ITER_DIRS
+ITER_DIRS=(
+    [waybar]="$COMPONENTS_DIR/waybar/iterations"
+    [wofi]="$COMPONENTS_DIR/wofi/iterations"
+)
+
+# Map of component -> switch script
+declare -A SWITCH_SCRIPTS
+SWITCH_SCRIPTS=(
+    [waybar]="$COMPONENTS_DIR/waybar/scripts/switch-theme.sh"
+    [wofi]="$COMPONENTS_DIR/wofi/scripts/switch-theme.sh"
+)
+
+list_components() {
+    for key in "${!ITER_DIRS[@]}"; do
+        echo "$key"
+    done | sort
+}
+
+list_themes() {
+    local component="$1"
+    local iter_dir="${ITER_DIRS[$component]}"
+    if [ ! -d "$iter_dir" ]; then
+        echo "No iterations directory for $component" >&2
+        return 1
+    fi
+    for d in "$iter_dir"/*/; do
+        [ -d "$d" ] && basename "$d"
+    done | sort
+}
+
+get_current() {
+    local component="$1"
+    local current_file="$COMPONENTS_DIR/$component/.current-iteration"
+    if [ -f "$current_file" ]; then
+        cat "$current_file"
+    fi
+}
+
+pick_component() {
+    local current
+    list_components | fzf \
+        --prompt="component > " \
+        --header="Pick a component to theme" \
+        --height=~50% \
+        --layout=reverse \
+        --border=rounded \
+        --border-label=" rice " \
+        --color="bg+:#313244,fg+:#cdd6f4,hl:#89b4fa,hl+:#89b4fa,border:#6c7086,header:#a6adc8,prompt:#f5c2e7,pointer:#f5c2e7"
+}
+
+pick_theme() {
+    local component="$1"
+    local current
+    current=$(get_current "$component")
+
+    list_themes "$component" | fzf \
+        --prompt="$component theme > " \
+        --header="Current: ${current:-none}" \
+        --height=~50% \
+        --layout=reverse \
+        --border=rounded \
+        --border-label=" $component themes " \
+        --color="bg+:#313244,fg+:#cdd6f4,hl:#89b4fa,hl+:#89b4fa,border:#6c7086,header:#a6adc8,prompt:#f5c2e7,pointer:#f5c2e7"
+}
+
+switch_theme() {
+    local component="$1"
+    local theme="$2"
+    local script="${SWITCH_SCRIPTS[$component]}"
+
+    if [ ! -x "$script" ]; then
+        echo "Switch script not found for $component: $script" >&2
+        return 1
+    fi
+
+    "$script" "$theme"
+}
+
+# --- Main ---
+
+component="${1:-}"
+theme="${2:-}"
+
+# Pick component if not provided
+if [ -z "$component" ]; then
+    component=$(pick_component)
+    [ -z "$component" ] && exit 0
+fi
+
+# Validate component
+if [ -z "${ITER_DIRS[$component]+x}" ]; then
+    echo "Unknown component: $component"
+    echo "Available: $(list_components | tr '\n' ' ')"
+    exit 1
+fi
+
+# Pick theme if not provided
+if [ -z "$theme" ]; then
+    theme=$(pick_theme "$component")
+    [ -z "$theme" ] && exit 0
+fi
+
+# Validate theme exists
+if [ ! -d "${ITER_DIRS[$component]}/$theme" ]; then
+    echo "Unknown theme '$theme' for $component"
+    echo "Available:"
+    list_themes "$component" | sed 's/^/  /'
+    exit 1
+fi
+
+switch_theme "$component" "$theme"

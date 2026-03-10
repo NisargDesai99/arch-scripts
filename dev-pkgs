@@ -33,6 +33,7 @@ yay_aur_installs=(
   github-desktop
   grpcurl-bin
   sublime-text-4
+  slack-desktop
 )
 
 
