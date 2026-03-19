@@ -17,20 +17,16 @@ pacman_installs=(
   cliphist
   wl-clipboard
   dart-sass
+  matugen
+  jq
+  bc
 )
 
 yay_aur_installs=(
   1password
   hyprlock
-  aylurs-gtk-shell
-  libastal-wireplumber-git
-  libastal-network-git
-  libastal-bluetooth-git
-  libastal-notifd-git
-  libastal-mpris-git
-  libastal-hyprland-git
-  libastal-tray-git
-  libastal-apps-git
+  quickshell-git
+  ttf-material-symbols-variable-git
 )
 
 is_installed() {

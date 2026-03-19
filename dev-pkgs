@@ -9,7 +9,7 @@ pacman_installs=(
   neovim
   clang
   tmux
-  words  # using to generate random words file to test threaded file downloader
+  words                   # using to generate random words file to test threaded file downloader
   # browsers
   brave
   qutebrowser
@@ -23,17 +23,19 @@ pacman_installs=(
   cloc
   docker
   docker-compose
-  deno  # needed for markdown in neovim
+  deno                    # needed for markdown in neovim
   jupyterlab
+  tailscale               # enable remote ssh and desktop
 )
 
 yay_aur_installs=(
   visual-studio-code-bin  # VS Code official microsoft build
-  bazel  # install without baselisk
+  bazel                   # install without baselisk
   github-desktop
   grpcurl-bin
   sublime-text-4
   slack-desktop
+  xrdp                    # for remote desktop
 )
 
 
