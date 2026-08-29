@@ -1,0 +1,25 @@
+#!/bin/sh
+# ncu-ui wrapper — force Nsight Compute UI onto XWayland/xcb.
+#
+# Why: on a Wayland session Qt auto-selects the wayland platform plugin, which
+# creates its GL context via EGL. NVIDIA's EGL-on-Wayland advertises an OpenGL
+# *ES* context ("OpenGL ES 3.2 NVIDIA ..."), and Qt's desktop-GL version parser
+# can't read that string, so it bails to slow Mesa software rendering:
+#
+#     Unable to parse OpenGL version string: "OpenGL ES 3.2 NVIDIA 610.43.02"
+#     Could not get current OpenGL version!
+#
+# Forcing QT_QPA_PLATFORM=xcb routes through XWayland. The bundled Qt ships only
+# a GLX xcb GL integration (libqxcb-glx-integration.so), so xcb == real NVIDIA
+# hardware GLX, which returns a desktop-GL 4.6 context Qt parses fine.
+#
+# Note: NCU_GUI_IGNORE_OPENGL_VERSION is NOT a real flag — it appears nowhere in
+# the Nsight Compute binaries and has no effect. This wrapper fixes the root
+# cause instead of silencing the check (which would leave you on software GL).
+#
+# HiDPI / 4K: under XWayland the X server reports 96 DPI, so Qt's auto-scaling
+# leaves the UI tiny on a 4K panel. QT_SCALE_FACTOR forces a uniform UI scale.
+# Default 1.5x; override per-launch with NCU_UI_SCALE, e.g.  NCU_UI_SCALE=2 ncu-ui
+
+exec env QT_QPA_PLATFORM=xcb QT_SCALE_FACTOR="${NCU_UI_SCALE:-1.5}" \
+    /usr/lib/nsight-compute/ncu-ui "$@"

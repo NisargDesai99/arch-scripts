@@ -21,6 +21,8 @@ pacman_installs=(
   ffmpeg
 
   xorg-xwayland
+  ethtool
+  iperf3
 )
 
 yay_aur_installs=(

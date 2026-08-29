@@ -6,28 +6,11 @@ BLUE="\033[1;34m"
 NC="\033[0m"  # No Color
 
 pacman_installs=(
-  waybar
-  wlsunset
-  dconf-editor
-  papirus-icon-theme
-  swaync
-  rofi-wayland
-  rofi-calc
-  rofi-emoji
-  cliphist
-  wl-clipboard
-  hypridle
-  dart-sass
-  matugen
-  jq
-  bc
+  aws-cli-v2
+  rsync
 )
 
 yay_aur_installs=(
-  1password
-  hyprlock
-  quickshell-git
-  ttf-material-symbols-variable-git
 )
 
 is_installed() {
@@ -57,6 +40,7 @@ for pkg in "${yay_aur_installs[@]}"; do
     # yay -S --noconfirm "$pkg"
   fi
 done
+
 
 
 

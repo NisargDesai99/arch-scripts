@@ -26,16 +26,30 @@ pacman_installs=(
   deno                    # needed for markdown in neovim
   jupyterlab
   tailscale               # enable remote ssh and desktop
+  nvitop                  # GPU process monitor
+  tree-sitter-cli
+  nsight-systems          # nvidia profiler
+  nsight-compute          # nvidia profiler
+  ollama-cuda
 )
 
 yay_aur_installs=(
   visual-studio-code-bin  # VS Code official microsoft build
-  bazel                   # install without baselisk
+  # bazel                   # install without baselisk
+  bazelisk
   github-desktop
   grpcurl-bin
   sublime-text-4
   slack-desktop
-  xrdp                    # for remote desktop
+  herdr-bin
+)
+
+
+# DOESN'T WORK LIST
+yay_aur_uninstall=(
+  xrdp                    # for remote desktop, doesn't support Hyprland
+  nomachine               # for remote desktop, needs redis server. yay install for redis points to valkey
+  rustdesk-bin            # try rustdesk-bin for remote desktop, doesn't work for wayland/hyprland
 )
 
 

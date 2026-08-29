@@ -1,0 +1,62 @@
+#!/usr/bin/env bash
+
+set -o pipefail
+
+if (( $# > 1 )); then
+  printf 'usage: herdx [session-name]\n' >&2
+  exit 2
+fi
+
+if (( $# == 1 )); then
+  selected=$1
+else
+  # Avoid offering the outer session when this runs in a nested-session popup.
+  current_session=''
+  if [[ ${HERDR_ENV:-} == 1 ]]; then
+    current_session=${HERDR_SESSION:-default}
+  fi
+
+  sessions=$(
+    herdr session list --json |
+      jq -r --arg current "$current_session" \
+        '.sessions[].name | select(. != $current)'
+  ) || exit 1
+
+  picker_output=$(
+    printf '%s\n' "$sessions" |
+      fzf \
+        --print-query \
+        --prompt='Herdr session> ' \
+        --header='Select a session, or type a new name and press Enter'
+  )
+  picker_status=$?
+
+  # fzf returns 1 when Enter accepts a query that has no matching row.
+  # Treat that as a new session name; 130 is an explicit cancellation.
+  case $picker_status in
+    0 | 1) ;;
+    130) exit 0 ;;
+    *) exit "$picker_status" ;;
+  esac
+
+  # fzf prints the query first and the selected row second. A typed query wins,
+  # which lets a new name be used even when it partially matches an old one.
+  query=${picker_output%%$'\n'*}
+  if [[ -n $query ]]; then
+    selected=$query
+  else
+    selected=${picker_output##*$'\n'}
+  fi
+fi
+
+if [[ -z $selected ]]; then
+  exit 0
+fi
+
+if [[ ! $selected =~ ^[A-Za-z0-9._-]+$ || $selected == '.' || $selected == '..' ]]; then
+  printf 'herdx: invalid session name: %s\n' "$selected" >&2
+  printf 'names may contain only letters, numbers, dot, underscore, and hyphen\n' >&2
+  exit 2
+fi
+
+exec herdr --session "$selected"
