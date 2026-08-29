@@ -17,11 +17,15 @@ if [[ -z $TMUX ]] && [[ -z $tmux_running ]]; then
     tmux start-server
 fi
 
+CLAUDE="claude"
+CODEX="codex"
+NO_AGENT="none"
+
 new_session=false
 if ! tmux has-session -t=$selected_name 2> /dev/null; then
-    start_claude=$(printf "yes\nno" | fzf --prompt="Start claude? ")
+    agent=$(printf "$CODEX\n$CLAUDE\n$NO_AGENT" | fzf --prompt="Pick agent")
 
-    if [[ -z $start_claude ]]; then
+    if [[ -z $agent ]]; then
         exit 0
     fi
     if [[ -n "$TMUX" ]]; then
@@ -34,9 +38,13 @@ if ! tmux has-session -t=$selected_name 2> /dev/null; then
     tmux new-session -ds $selected_name -c $selected -x $win_width -y $win_height
     nvim_pane=$(tmux display-message -t $selected_name -p '#{pane_id}')
     term_pane=$(tmux split-window -v -t $nvim_pane -c $selected -P -F '#{pane_id}')
-    if [[ "$start_claude" == "yes" ]]; then
-        claude_pane=$(tmux split-window -h -t $nvim_pane -c $selected -P -F '#{pane_id}')
-        tmux send-keys -t $claude_pane 'claude --resume' C-m
+    if [[ "$agent" != "$NO_AGENT" ]]; then
+        case "$agent" in
+            "$CLAUDE") agent_cmd="claude --resume" ;;
+            "$CODEX")  agent_cmd="codex resume" ;;
+        esac
+        agent_pane=$(tmux split-window -h -t $nvim_pane -c $selected -P -F '#{pane_id}')
+        tmux send-keys -t "$agent_pane" "$agent_cmd" C-m
     fi
     tmux send-keys -t $nvim_pane 'nvim ./' C-m
     tmux select-pane -t $term_pane
@@ -45,8 +53,8 @@ fi
 
 if [[ "$new_session" == true ]]; then
     tmux resize-pane -t $term_pane -y 21
-    if [[ -n "$claude_pane" ]]; then
-        tmux resize-pane -t $claude_pane -x 86
+    if [[ -n "$agent_pane" ]]; then
+        tmux resize-pane -t $agent_pane -x 86
     fi
 fi
 
