@@ -39,13 +39,12 @@ else
     *) exit "$picker_status" ;;
   esac
 
-  # fzf prints the query first and the selected row second. A typed query wins,
-  # which lets a new name be used even when it partially matches an old one.
-  query=${picker_output%%$'\n'*}
-  if [[ -n $query ]]; then
-    selected=$query
-  else
+  # fzf prints the query first and the selected row second. Prefer the
+  # selected session; use the query only when no row matched.
+  if (( picker_status == 0 )); then
     selected=${picker_output##*$'\n'}
+  else
+    selected=${picker_output%%$'\n'*}
   fi
 fi
 

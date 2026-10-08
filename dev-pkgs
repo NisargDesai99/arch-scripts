@@ -1,9 +1,41 @@
 #!/bin/bash
 
-# Color codes
-GREEN="\033[0;32m"
-BLUE="\033[1;34m"
-NC="\033[0m"  # No Color
+# Color codes (disabled when output is redirected or NO_COLOR is set)
+if [[ -t 1 && -z "${NO_COLOR:-}" ]]; then
+  GREEN=$'\033[0;32m'
+  BLUE=$'\033[1;34m'
+  YELLOW=$'\033[0;33m'
+  RED=$'\033[0;31m'
+  NC=$'\033[0m'
+else
+  GREEN=""
+  BLUE=""
+  YELLOW=""
+  RED=""
+  NC=""
+fi
+
+log() {
+  local level="$1"
+  local color="$2"
+  shift 2
+  printf '%b[%s] [%-7s]%b %s\n' "$color" "$(date '+%Y-%m-%d %H:%M:%S')" "$level" "$NC" "$*"
+}
+
+log_info() { log "INFO" "$BLUE" "$@"; }
+log_success() { log "SUCCESS" "$GREEN" "$@"; }
+log_warn() { log "WARNING" "$YELLOW" "$@"; }
+log_error() { log "ERROR" "$RED" "$@" >&2; }
+
+failed_installs=()
+codex_installer=""
+
+cleanup() {
+  if [[ -n "$codex_installer" && -f "$codex_installer" ]]; then
+    rm -f -- "$codex_installer"
+  fi
+}
+trap cleanup EXIT
 
 pacman_installs=(
   neovim
@@ -31,6 +63,7 @@ pacman_installs=(
   nsight-systems          # nvidia profiler
   nsight-compute          # nvidia profiler
   ollama-cuda
+  powertop
 )
 
 yay_aur_installs=(
@@ -54,37 +87,82 @@ yay_aur_uninstall=(
 
 
 is_installed() {
-    pacman -Q "$1" &>/dev/null
+  pacman -Q "$1" &>/dev/null
 }
 
+# Update an existing app through pacman; only use the installer for first-time setup.
+codex_package="chatgpt-bin"
+codex_installer_url="https://persistent.oaistatic.com/codex-app-prod/linux/install-arch.sh"
 
-# install pacman packages
+if is_installed "$codex_package"; then
+  log_info "ChatGPT desktop app (Codex) is installed; updating it through pacman"
+  if sudo pacman -Syu --needed "$codex_package"; then
+    codex_version=$(pacman -Q "$codex_package" 2>/dev/null)
+    log_success "ChatGPT desktop app is up to date: $codex_version"
+  else
+    log_error "Failed to update the ChatGPT desktop app via pacman"
+    failed_installs+=("$codex_package (pacman)")
+  fi
+elif ! command -v curl &>/dev/null; then
+  log_error "Cannot install the ChatGPT desktop app: curl is not available"
+  failed_installs+=("$codex_package (OpenAI installer)")
+elif codex_installer=$(mktemp /tmp/install-codex-arch.XXXXXX); then
+  log_info "Downloading the official ChatGPT desktop app installer"
+  if curl --proto '=https' --tlsv1.2 --fail --location --show-error --connect-timeout 15 --retry 3 --output "$codex_installer" "$codex_installer_url"; then
+    log_warn "The first-time OpenAI installer performs a full system upgrade and will ask for confirmation"
+    log_info "Running the official ChatGPT desktop app installer"
+    if sudo bash "$codex_installer"; then
+      codex_version=$(pacman -Q "$codex_package" 2>/dev/null)
+      log_success "Installed the ChatGPT desktop app: $codex_version"
+    else
+      log_error "The ChatGPT desktop app installer failed"
+      failed_installs+=("$codex_package (OpenAI installer)")
+    fi
+  else
+    log_error "Failed to download the ChatGPT desktop app installer"
+    failed_installs+=("$codex_package (download)")
+  fi
+else
+  log_error "Failed to create a temporary file for the ChatGPT desktop app installer"
+  failed_installs+=("$codex_package (temporary file)")
+fi
+
+# Install pacman packages
+log_info "Checking ${#pacman_installs[@]} pacman packages"
 for pkg in "${pacman_installs[@]}"; do
   if is_installed "$pkg"; then
-    echo -e "${GREEN}$pkg is already installed${NC} "
+    log_success "$pkg is already installed"
   else
-    echo -e "${BLUE}Installing $pkg via pacman...${NC}"
-    sudo pacman -S "$pkg"
-    # sudo pacman -S --noconfirm "$pkg"
+    log_info "Installing $pkg via pacman"
+    if sudo pacman -S "$pkg"; then
+      log_success "Installed $pkg via pacman"
+    else
+      log_error "Failed to install $pkg via pacman"
+      failed_installs+=("$pkg (pacman)")
+    fi
   fi
 done
-
 
 # Install AUR packages
+log_info "Checking ${#yay_aur_installs[@]} AUR packages"
 for pkg in "${yay_aur_installs[@]}"; do
   if is_installed "$pkg"; then
-    echo -e "${GREEN}$pkg is already installed${NC}"
+    log_success "$pkg is already installed"
   else
-    echo -e "${BLUE}Installing $pkg via yay...${NC}"
-    yay -S "$pkg"
-    # yay -S --noconfirm "$pkg"
+    log_info "Installing $pkg via yay"
+    if yay -S "$pkg"; then
+      log_success "Installed $pkg via yay"
+    else
+      log_error "Failed to install $pkg via yay"
+      failed_installs+=("$pkg (yay)")
+    fi
   fi
 done
 
+if (("${#failed_installs[@]}")); then
+  log_error "Setup completed with ${#failed_installs[@]} failed install(s):"
+  printf '  - %s\n' "${failed_installs[@]}" >&2
+  exit 1
+fi
 
-
-
-
-
-
-
+log_success "Developer package setup completed successfully"
